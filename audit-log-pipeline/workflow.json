@@ -1,0 +1,259 @@
+{
+  "name": "SOC 2 Audit Log Pipeline",
+  "nodes": [
+    {
+      "id": "7d15fba6-ca97-4af6-8fad-1a932b2a96e4",
+      "name": "Receive Audit Event",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        96
+      ],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "soc2-audit-log",
+        "responseMode": "responseNode",
+        "authentication": "headerAuth"
+      },
+      "webhookId": "0c56efd6-ae83-4006-9409-174d43720cf6"
+    },
+    {
+      "id": "e43b2164-fc9a-4055-8a14-abc2d5f047b6",
+      "name": "Normalize Input Fields",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        224,
+        96
+      ],
+      "parameters": {
+        "mode": "manual",
+        "includeOtherFields": false,
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f1",
+              "name": "user_id",
+              "value": "={{ $json.body.user_id || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "f2",
+              "name": "session_id",
+              "value": "={{ $json.body.session_id || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "f3",
+              "name": "model_id",
+              "value": "={{ $json.body.model_id || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "f4",
+              "name": "prompt",
+              "value": "={{ $json.body.prompt || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "f5",
+              "name": "response",
+              "value": "={{ $json.body.response || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "f6",
+              "name": "logged_at",
+              "value": "={{ $json.body.logged_at || $now.toISO() }}",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "248cd061-3554-4dcf-99bb-8d0caab722e5",
+      "name": "Generate Audit Entry",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        448,
+        96
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const crypto = require('crypto');\n\nconst results = [];\n\nfor (const item of $input.all()) {\n  const { user_id, session_id, model_id, prompt, response, logged_at } = item.json;\n\n  const missing = [];\n  if (!user_id) missing.push('user_id');\n  if (!session_id) missing.push('session_id');\n  if (!model_id) missing.push('model_id');\n  if (!prompt) missing.push('prompt');\n\n  if (missing.length > 0) {\n    results.push({ json: { entry_valid: false, error: 'Missing required fields: ' + missing.join(', ') } });\n    continue;\n  }\n\n  const audit_id = 'aud_' + crypto.randomBytes(12).toString('hex');\n  const canonical = JSON.stringify({ user_id, session_id, model_id, prompt, response, logged_at });\n  const integrity_hash = crypto.createHash('sha256').update(canonical).digest('hex');\n\n  const logged = new Date(logged_at);\n  const expires = new Date(logged.getTime() + 90 * 24 * 60 * 60 * 1000);\n\n  results.push({\n    json: {\n      entry_valid: true,\n      audit_id,\n      user_id,\n      session_id,\n      model_id,\n      prompt,\n      response,\n      logged_at,\n      integrity_hash,\n      retention_expires_at: expires.toISOString(),\n      status: 'active'\n    }\n  });\n}\n\nreturn results;"
+      }
+    },
+    {
+      "id": "061dd594-6827-472d-b3f1-e6bdb84952fb",
+      "name": "Entry Valid?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        672,
+        96
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.entry_valid }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              },
+              "rightValue": true
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "1cfac5c6-93e9-4d86-9cb1-140689045108",
+      "name": "Write to Supabase",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        896,
+        0
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "YOUR_SUPABASE_PROJECT_URL/rest/v1/ai_audit_log",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "YOUR_SUPABASE_ANON_KEY"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer YOUR_SUPABASE_SERVICE_KEY"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ audit_id: $json.audit_id, user_id: $json.user_id, session_id: $json.session_id, model_id: $json.model_id, prompt: $json.prompt, response: $json.response, logged_at: $json.logged_at, integrity_hash: $json.integrity_hash, retention_expires_at: $json.retention_expires_at, status: $json.status }) }}"
+      }
+    },
+    {
+      "id": "c7043750-49f7-4f81-8155-5d6accd163e4",
+      "name": "Respond 200 OK",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1120,
+        0
+      ],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ audit_id: $(\"Generate Audit Entry\").first().json.audit_id, status: \"logged\", integrity_hash: $(\"Generate Audit Entry\").first().json.integrity_hash }) }}",
+        "options": {
+          "responseCode": 200
+        }
+      }
+    },
+    {
+      "id": "4bb8617c-01cc-44a3-9ff7-a31fcf640cb1",
+      "name": "Respond 400 Invalid",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        896,
+        192
+      ],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ error: $json.error }) }}",
+        "options": {
+          "responseCode": 400
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Receive Audit Event": {
+      "main": [
+        [
+          {
+            "node": "Normalize Input Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Input Fields": {
+      "main": [
+        [
+          {
+            "node": "Generate Audit Entry",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Audit Entry": {
+      "main": [
+        [
+          {
+            "node": "Entry Valid?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Entry Valid?": {
+      "main": [
+        [
+          {
+            "node": "Write to Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond 400 Invalid",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Write to Supabase": {
+      "main": [
+        [
+          {
+            "node": "Respond 200 OK",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false
+  },
+  "meta": {
+    "instanceId": ""
+  },
+  "tags": []
+}

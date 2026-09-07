@@ -1,0 +1,121 @@
+{
+  "name": "SOC 2 Retention Enforcer",
+  "nodes": [
+    {
+      "id": "9694cd79-bbb6-4cb9-a4f9-5fbd2d1b344f",
+      "name": "Daily Schedule",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 2 * * *"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "bd00320a-7a5c-42c8-9a38-e962edeb24b1",
+      "name": "Flag Expired Entries",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        224,
+        0
+      ],
+      "parameters": {
+        "method": "PATCH",
+        "url": "YOUR_SUPABASE_PROJECT_URL/rest/v1/ai_audit_log",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "status",
+              "value": "eq.active"
+            },
+            {
+              "name": "retention_expires_at",
+              "value": "={{ \"lt.\" + $now.toISO() }}"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "YOUR_SUPABASE_ANON_KEY"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer YOUR_SUPABASE_SERVICE_KEY"
+            },
+            {
+              "name": "Prefer",
+              "value": "return=representation"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "{\"status\": \"expired\"}"
+      }
+    },
+    {
+      "id": "79859ec0-5899-41b0-b5f0-a9e5bab8ccbd",
+      "name": "Count Expired Entries",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        448,
+        0
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const body = $input.first().json;\nconst count = Array.isArray(body) ? body.length : 0;\nreturn [{ json: { enforced_at: new Date().toISOString(), entries_expired: count } }];"
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Daily Schedule": {
+      "main": [
+        [
+          {
+            "node": "Flag Expired Entries",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Flag Expired Entries": {
+      "main": [
+        [
+          {
+            "node": "Count Expired Entries",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false
+  },
+  "meta": {
+    "instanceId": ""
+  },
+  "tags": []
+}
