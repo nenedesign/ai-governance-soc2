@@ -92,7 +92,7 @@
         -300
       ],
       "parameters": {
-        "content": "## SOC 2 Retention Enforcer\n\nRuns daily at 2:00 AM. Flags all active audit log entries past their 90-day retention window as `expired` in a single batch PATCH to Supabase.\n\n**Flow:** Daily cron \u2192 PATCH Supabase (status=expired where retention_expires_at < now) \u2192 count entries flagged\n\n**SOC 2 TSC:** Supports evidence collection for CC6.5 (logical access: discontinuation of access to protected information).\n\n**Note:** Entries are flagged, not deleted. Immutability is enforced by Supabase RLS \u2014 INSERT only, no DELETE.",
+        "content": "## SOC 2 Retention Enforcer\n\nRuns daily at 2:00 AM. Flags all active audit log entries past their 90-day retention window as `expired` in a single batch PATCH to Supabase.\n\n**Flow:** Daily cron \u2192 PATCH Supabase (status=expired where retention_expires_at < now) \u2192 count entries flagged\n\n**SOC 2 TSC:** Supports evidence collection for CC6.5 (logical access: discontinuation of access to protected information).\n\n**Note:** Entries are flagged, not deleted. Immutability is enforced by Supabase RLS: INSERT only, no DELETE.",
         "height": 200,
         "width": 720,
         "color": 4
@@ -124,7 +124,7 @@
         200
       ],
       "parameters": {
-        "content": "## Configuration\n\nIn **Flag Expired Entries** \u2014 replace:\n- `YOUR_SUPABASE_PROJECT_URL`\n- `YOUR_SUPABASE_ANON_KEY`\n- `YOUR_SUPABASE_SERVICE_KEY`\n\nCron runs at **2:00 AM** in your n8n instance timezone.\nAdjust the schedule in **Daily Schedule** if needed.",
+        "content": "## Configuration\n\nIn **Flag Expired Entries**: replace:\n- `YOUR_SUPABASE_PROJECT_URL`\n- `YOUR_SUPABASE_ANON_KEY`\n- `YOUR_SUPABASE_SERVICE_KEY`\n\nCron runs at **2:00 AM** in your n8n instance timezone.\nAdjust the schedule in **Daily Schedule** if needed.",
         "height": 180,
         "width": 380,
         "color": 1

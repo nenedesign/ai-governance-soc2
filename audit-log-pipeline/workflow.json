@@ -224,7 +224,7 @@
         400
       ],
       "parameters": {
-        "content": "## Configuration\n\nIn **Write to Supabase** \u2014 replace:\n- `YOUR_SUPABASE_PROJECT_URL`\n- `YOUR_SUPABASE_ANON_KEY`\n- `YOUR_SUPABASE_SERVICE_KEY`\n\nIn **Receive Audit Event** \u2014 add your header auth credential.\n\nRetention window: 90 days. Change in the **Generate Audit Entry** Code node.",
+        "content": "## Configuration\n\nIn **Write to Supabase**: replace:\n- `YOUR_SUPABASE_PROJECT_URL`\n- `YOUR_SUPABASE_ANON_KEY`\n- `YOUR_SUPABASE_SERVICE_KEY`\n\nIn **Receive Audit Event**: add your header auth credential.\n\nRetention window: 90 days. Change in the **Generate Audit Entry** Code node.",
         "height": 220,
         "width": 440,
         "color": 1
