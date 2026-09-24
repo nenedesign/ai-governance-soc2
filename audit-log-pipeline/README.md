@@ -22,7 +22,22 @@ Integrity verification: recompute `SHA-256(JSON.stringify({ user_id, session_id,
 
 Teams deploying AI systems in SOC 2 environments who need a structured, persistent record of AI interactions. Useful for security engineers building compliance infrastructure and for product teams adding audit capabilities to an existing n8n-based AI workflow.
 
+The same design applies to forensic and investigative workflows where chain of custody for AI interactions is a legal or evidentiary requirement.
+
 **Level:** Intermediate
+
+---
+
+## Chain-of-custody properties
+
+The audit log fields map directly to chain-of-custody requirements:
+
+- **`audit_id`**: unique identifier returned to the caller; functions as an evidence item reference for correlation and retrieval
+- **`integrity_hash`**: SHA-256 of the canonical payload; recompute at any time to verify the record has not been modified since it was logged
+- **Append-only INSERT**: no application-layer UPDATE or DELETE; the entry is immutable after creation
+- **`logged_at`** + **`user_id`** + **`session_id`**: establish who interacted with which AI model, in which session, at what time
+
+For AI-assisted investigation workflows, these properties establish a chain of custody for every AI interaction that contributed to a decision or finding. See [Chain of Custody](https://github.com/nenedesign/ai-accountability-design-patterns/blob/main/concepts/05-chain-of-custody.md) in ai-accountability-design-patterns for the design framework.
 
 ---
 
@@ -46,7 +61,7 @@ Teams deploying AI systems in SOC 2 environments who need a structured, persiste
 **Credentials:**
 - A header auth credential for the webhook API key
 - Supabase anon key (for `apikey` header)
-- Supabase service key (for `Authorization` header — needed to bypass RLS on INSERT)
+- Supabase service key (for `Authorization` header, needed to bypass RLS on INSERT)
 
 ---
 

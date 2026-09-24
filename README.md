@@ -54,6 +54,10 @@ flowchart LR
 - `retention_expires_at`: 90 days from logged_at, used by the Retention Enforcer
 - `status`: `active` or `expired`
 
+**Chain-of-custody properties:**
+
+The same properties that make this pipeline useful for SOC 2 compliance apply directly to forensic and investigative contexts. `audit_id` serves as an evidence item identifier. `integrity_hash` provides tamper detection: any modification to the logged interaction invalidates the hash. The append-only INSERT policy means the record cannot be altered after creation. For AI-assisted investigation workflows, these three properties together establish a chain of custody for every AI interaction that contributed to a decision or finding.
+
 **TSC coverage this workflow supports evidence for:**
 - **CC7.2 (System Operations monitoring)**: provides a persistent, tamper-evident record of all AI interactions that auditors can review
 - **CC9.2 (Risk Mitigation: vendor and business partner risk)**: documents the AI model used (model_id) and the full interaction for every call to a third-party model provider
