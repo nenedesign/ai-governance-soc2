@@ -22,7 +22,7 @@ Integrity verification: recompute `SHA-256(JSON.stringify({ user_id, session_id,
 
 Teams deploying AI systems in SOC 2 environments who need a structured, persistent record of AI interactions. Useful for security engineers building compliance infrastructure and for product teams adding audit capabilities to an existing n8n-based AI workflow.
 
-The same design applies to forensic and investigative workflows where chain of custody for AI interactions is a legal or evidentiary requirement.
+The same design applies to high-stakes and investigative workflows where chain of custody for AI interactions is a legal or evidentiary requirement.
 
 **Level:** Intermediate
 
